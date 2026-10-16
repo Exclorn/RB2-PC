@@ -2,6 +2,8 @@
 > **[ANDROID.md](ANDROID.md#players-start-here)**: pick the ISO of your own disc in the app and play.
 > No game data is included; you need your own legally obtained copy of the game.
 
+> **Windows (x64):** see **[WINDOWS.md](WINDOWS.md)** to build `rb2.exe` from your own disc dump (untested on real hardware so far).
+
 # rb2 - Dragon Ball Raging Blast 2 Recompiled
 
 Recompiled using the [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk)

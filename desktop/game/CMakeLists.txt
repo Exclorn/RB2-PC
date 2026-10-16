@@ -1,7 +1,7 @@
-# rb2 desktop build (reference for the Android port): same game code, desktop SDK.
+# rb2 desktop build: same game code as the Android port, desktop SDK.
 #
-# tools/desktop/build_windows.sh drives it (codegen with the desktop SDK, cross-build with clang-cl
-# + xwin like Project8Recomp's M1 build).
+# Windows (native):  tools/desktop/build_windows.ps1   (see WINDOWS.md)
+# Windows (cross, from Linux): tools/desktop/build_windows.sh (maintainer's layout)
 
 cmake_minimum_required(VERSION 3.25)
 project(rb2 LANGUAGES CXX)
@@ -32,4 +32,8 @@ else()
 endif()
 
 rexglue_setup_target(rb2)
-target_include_directories(rb2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+target_include_directories(rb2 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+    # main.cpp includes "generated/default/rb2_init.h"; codegen writes to desktop/generated/default.
+    # An include path instead of a desktop/game/generated symlink (symlinks need admin on Windows).
+    ${CMAKE_CURRENT_SOURCE_DIR}/..)

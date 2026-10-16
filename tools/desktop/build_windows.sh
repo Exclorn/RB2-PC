@@ -17,7 +17,6 @@ OUT=/mnt/c/rb2-work/win
 
 mkdir -p "$D/config"
 sed -e "s#REPLACE_ME#$GAME#g" "$REPO/config/rb2_manifest.toml" > "$D/config/rb2_manifest.local.toml"
-cp ~/thp8/Project8Recomp/src/game/src/win_math_compat.cpp "$D/game/"
 (cd "$D/config" && LD_LIBRARY_PATH="$SDK/linux-amd64/lib:${LD_LIBRARY_PATH:-}" "$CLI" codegen rb2_manifest.local.toml > /tmp/rb2_desk_cg.log 2>&1) \
   || { tail -20 /tmp/rb2_desk_cg.log; exit 1; }
 # rexglue_setup_target expects generated/ next to the game sources (as in Project8Recomp src/).
