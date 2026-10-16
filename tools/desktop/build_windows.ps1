@@ -10,8 +10,8 @@
   Run from any PowerShell; the script loads the Visual Studio build environment itself.
 
 .PARAMETER GameDir
-  Folder holding your extracted disc (default.xex, data\, nxeart). Use tools\android\xdvdfs.py to
-  extract your own ISO: python tools\android\xdvdfs.py my.iso C:\rb2\game
+  Folder holding your extracted disc (default.xex, data\, nxeart). Use tools\xdvdfs.py to
+  extract your own ISO: python tools\xdvdfs.py my.iso C:\rb2\game
 
 .PARAMETER SdkPrefix
   An existing SDK install prefix (the folder that contains bin\, lib\ and lib\cmake\rexglue).
@@ -113,7 +113,7 @@ if (-not $SkipCodegen) {
   try {
     $env:PATH = "$(Split-Path $rexglue);$env:PATH"
     & $rexglue codegen rb2_manifest.local.toml
-    if ($LASTEXITCODE -ne 0) { Die "codegen failed (exit $LASTEXITCODE). Is default.xex the supported release? See ANDROID.md for size and SHA-1." }
+    if ($LASTEXITCODE -ne 0) { Die "codegen failed (exit $LASTEXITCODE). Is default.xex the supported release? See WINDOWS.md for the expected size and SHA-1." }
   } finally { Pop-Location }
 }
 if (-not (Test-Path (Join-Path $Desktop "generated\default\sources.cmake"))) {

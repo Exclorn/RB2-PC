@@ -1,12 +1,12 @@
 # Dragon Ball: Raging Blast 2 on Windows (x64)
 
-A native Windows build of the same recompilation the Android port uses. The game's PowerPC code is
+A native Windows build of the Raging Blast 2 recompilation. The game's PowerPC code is
 translated to C++ from **your own** `default.xex` and compiled into `rb2.exe`, running on the ReXGlue
 SDK's Vulkan renderer.
 
-**Status: untested on real hardware.** The Windows target existed as a Linux-cross-compiled reference
-build (see `PROGRESS.md`) and this adds a native build path for it. Nothing here has been run on a
-Windows machine yet. Please report what happens (issue with your GPU, driver and the log).
+**Status: experimental, untested on real hardware.** This is the first native Windows build path for
+this project; nothing here has been run on a Windows machine yet. Please report what happens (open a
+**Windows report** issue with your GPU, driver and the log).
 
 No game data is included or distributed. You need your own legally obtained copy of the Xbox 360 game:
 **USA, Rev 1** (title ID 4E4D0826). Your extracted `default.xex` must be 7,151,616 bytes with SHA-1
@@ -46,7 +46,7 @@ exports MSVC-mangled C++.
 1. **Extract your disc image** (an XISO or redump-style XGD2/XGD3 `.iso`):
 
    ```powershell
-   python tools\android\xdvdfs.py C:\path\to\your-own-dump.iso C:\rb2\game
+   python tools\xdvdfs.py C:\path\to\your-own-dump.iso C:\rb2\game
    ```
 
    A complete extraction holds `default.xex`, `nxeart`, and in `data\X360\` six
@@ -93,13 +93,11 @@ cmake --build out\build\win-amd64 --config Release --target install --parallel
 # prefix: rexglue-sdk\out\install\win-amd64
 ```
 
-## Differences from the Android build
+## Notes
 
-The Android port runs on a patched SDK (`patches/rexglue-sdk-android/`: Adreno/Turnip, frame
-generation, power and pacing work). The Windows build uses the **stock** SDK v0.10.0, so none of
-the Android-only options exist there. The game hooks (`src/rb2_hooks.h`, `src/rb2_resolution.h`) are
-shared. The Android music-in-mono workaround (`--audio_force_stereo`) is an Android SDK patch and is not
-in the stock SDK; if the music is quiet or missing on Windows, report it.
+The build uses the **stock** ReXGlue SDK v0.10.0. The game hooks are in `src/rb2_hooks.h` and
+`src/rb2_resolution.h`. If the music is quiet or only plays on one speaker, report it: a mono-music quirk
+of the game's audio was seen on another platform and a workaround may be needed.
 
 Cross-building from Linux is also supported with `tools/desktop/build_windows.sh` (the maintainer's
 layout, using an xwin sysroot).

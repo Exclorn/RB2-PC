@@ -53,7 +53,7 @@ with open(dst, "w", newline="\n") as o:
     o.write("""# ReXGlue codegen manifest for Dragon Ball: Raging Blast 2 (Xbox 360, USA Rev 1).
 #
 # Converted from WistfulHopes/RB2's rb2_config.toml (pre-0.2 SDK format) by
-# tools/android/mkmanifest.py: same function boundaries, the CRT routines it
+# tools/mkmanifest.py: same function boundaries, the CRT routines it
 # hooked by hand now map to the SDK's rexcrt layer.
 #
 # TRAP (from THP8): every codegen table is read from [entrypoint]: write

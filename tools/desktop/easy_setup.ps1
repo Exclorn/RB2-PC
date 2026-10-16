@@ -131,7 +131,7 @@ if ($problem) {
   Say "  Extracting (about 5-15 minutes, nothing is uploaded anywhere)..."
   if (Test-Path $GameDir) { Remove-Item $GameDir -Recurse -Force }
   New-Item -ItemType Directory -Force $GameDir | Out-Null
-  & $py.Exe @($py.Args + @((Join-Path $Repo "tools\android\xdvdfs.py"), $iso, $GameDir))
+  & $py.Exe @($py.Args + @((Join-Path $Repo "tools\xdvdfs.py"), $iso, $GameDir))
   if ($LASTEXITCODE -ne 0) { Fail "that file could not be read as an Xbox 360 game disc image. Make sure it is a full .iso of your own disc." }
   $problem = GameOk
   if ($problem) { Fail "$problem." }

@@ -1,41 +1,44 @@
-# Dragon Ball: Raging Blast 2 on PC and Android
+# Dragon Ball: Raging Blast 2 on PC
 
-A static recompilation of **Dragon Ball: Raging Blast 2** (Xbox 360). The game's code is translated to
-native C++ from *your own* disc, so it runs as a normal program instead of an emulator.
+A static recompilation of **Dragon Ball: Raging Blast 2** (Xbox 360) for **Windows (x64)**. The game's
+code is translated to native C++ from *your own* disc, so it runs as a normal program instead of an
+emulator.
 
-| Platform | Status | Start here |
-|---|---|---|
-| **Windows (x64)** | Experimental, untested on real hardware so far | **[WINDOWS.md](WINDOWS.md)**: unzip to a short folder like `C:\RB2` and double-click `Setup-RB2-Windows.bat` |
-| **Android (arm64)** | Playable (60 fps on Snapdragon 8 Gen 2 / 8 Elite) | **[ANDROID.md](ANDROID.md#players-start-here)** and the [APK](https://github.com/moddedrounds/RB2-Android/releases/latest/download/RB2-Android.apk) from the original port |
+**Status: experimental, untested on real hardware so far.**
 
-**No game data is included or downloaded.** You need your own legally obtained copy of the Xbox 360
-game (USA, Rev 1 / v1.1). Requests for game files or ISOs will be closed without reply.
+## Quick start
 
-The PC build is made on your own machine from your own disc, so there is no ready-made download:
-nothing derived from the game may be shared. Reports from other PCs are the most useful thing you can
-contribute: open a **Windows report** issue.
+1. Click **Code > Download ZIP** and unzip it to a **short folder** such as `C:\RB2`.
+2. Make an `.iso` of **your own** Xbox 360 disc (USA, Rev 1 / v1.1).
+3. Double-click **`Setup-RB2-Windows.bat`** and follow the prompts. It installs the tools it needs,
+   checks your disc image, builds the game and adds a desktop shortcut.
 
-The Android port is by [moddedrounds](https://github.com/moddedrounds/RB2-Android); this fork adds the
-Windows build. The recompilation itself is [WistfulHopes/RB2](https://github.com/WistfulHopes/RB2).
+Details, requirements and troubleshooting: **[WINDOWS.md](WINDOWS.md)**.
 
-## Developer notes (original project)
+**No game data is included or downloaded.** You need your own legally obtained copy of the game. The
+build happens on your own PC from your own disc, so there is no ready-made download: nothing derived
+from the game may be shared. Requests for game files or ISOs will be closed without reply.
 
-Recompiled using the [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk)
+Reports from other PCs are the most useful contribution: open a **Windows report** issue.
 
-## Setup
+## Developer notes
 
-1. Ensure REXSDK is set properly in your environment - see [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) for more info
-1. Extract to `assets`
-1. Run cmake configure
-1. Run re2_codegen utility target from cmake
-1. Run cmake build for re2
-1. Launch with first argument pointing to the assets folder
+The Windows build is driven by `tools/desktop/build_windows.ps1` (see [WINDOWS.md](WINDOWS.md)); the
+code that gets built is in `desktop/game` and `src/rb2_hooks.h` / `src/rb2_resolution.h`, on top of the
+[ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) v0.10.0. The codegen manifest is
+`config/rb2_manifest.toml` (regenerated from `rb2_config.toml` with `tools/mkmanifest.py`). The repository
+root also still holds the original project's build for the older SDK (`CMakeLists.txt`, `src/main.cpp`,
+`src/bdengine`), kept for reference.
 
 ## Credits
 
+- [WistfulHopes/RB2](https://github.com/WistfulHopes/RB2): the original recompilation project.
+- [moddedrounds/RB2-Android](https://github.com/moddedrounds/RB2-Android): the migration to ReXGlue SDK 0.10 (codegen manifest, hooks, resolution scaling) this build is based on.
+- [Project8Recomp](https://github.com/theokyr/Project8Recomp): `win_math_compat.cpp` (BSD-3-Clause).
 - [ReXGlue](https://github.com/rexglue/rexglue-sdk) for the recompilation tools.
 - [dlmalloc](https://gee.cs.oswego.edu/dl/html/malloc.html) for the heap allocator.
 - [REBlue](https://github.com/rexglue/reblue) for the dlmalloc setup.
+
 ## Legal
 
 This repository contains no game data: no disc image, `default.xex`, extracted files or recompiled

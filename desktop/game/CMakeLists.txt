@@ -1,4 +1,4 @@
-# rb2 desktop build: same game code as the Android port, desktop SDK.
+# rb2 desktop build: Windows build of the recompiled game on the stock ReXGlue SDK.
 #
 # Windows (native):  tools/desktop/build_windows.ps1   (see WINDOWS.md)
 # Windows (cross, from Linux): tools/desktop/build_windows.sh (maintainer's layout)

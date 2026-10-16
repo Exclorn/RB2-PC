@@ -1,8 +1,0 @@
-{
-  "versionCode": 123,
-  "versionName": "1.2.3",
-  "apk": "https://github.com/moddedrounds/RB2-Android/releases/download/v1.2.3/RB2-Android.apk",
-  "sha256": "2a1545ed89745f3ad92848304735b548449429f6b5c584898ae233854276635d",
-  "size": 77741419,
-  "notes": "New icon; the launcher background now comes from your own installed game."
-}

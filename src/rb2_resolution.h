@@ -6,7 +6,7 @@
 //   sub_823D2640(obj, width, height, type, count)        - render targets (5 call sites)
 //   sub_823D2788(obj, ?, width, height, format, levels)  - textures (4 call sites)
 // Scaling both, plus the stored render size (mid-function hook RB2RenderSizeHook on the
-// "stw r9,24(r31)" at 0x823DA084, added by tools/android/mkmanifest.py), renders the whole frame
+// "stw r9,24(r31)" at 0x823DA084, added by tools/mkmanifest.py), renders the whole frame
 // smaller; the presenter scales the guest front buffer to the screen (FSR 1 or bilinear).
 // Only exact 1280x720 requests change: smaller buffers (bloom, shadows, UI) keep their sizes.
 

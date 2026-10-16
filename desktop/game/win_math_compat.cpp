@@ -1,5 +1,5 @@
 // Vendored from Project8Recomp (BSD-3-Clause, (c) 2026 the Tony Hawk's Project 8 recompilation project
-// contributors): src/game/src/win_math_compat.cpp. See that project for the licence text.
+// contributors): src/game/src/win_math_compat.cpp. Licence text: LICENSE-win_math_compat.txt in this folder.
 //
 // C23 math functions that Microsoft's UCRT does not provide.
 //

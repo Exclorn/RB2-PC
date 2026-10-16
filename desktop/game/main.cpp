@@ -1,4 +1,4 @@
-// rb2 desktop entry: the same app class and hooks as the Android build.
+// rb2 desktop entry.
 
 #include "generated/default/rb2_init.h"
 
