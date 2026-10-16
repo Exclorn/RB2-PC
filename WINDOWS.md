@@ -12,6 +12,23 @@ No game data is included or distributed. You need your own legally obtained copy
 **USA, Rev 1** (title ID 4E4D0826). Your extracted `default.xex` must be 7,151,616 bytes with SHA-1
 `F57B501FA2CDD309C2C56B76A5F297ACBC564FD2`. Other releases and regions are not supported.
 
+## Easy way (no coding)
+
+1. On the repository page click **Code > Download ZIP**, then unzip it to a **short folder**
+   such as `C:\RB2` (long folder names break the build).
+2. Make an `.iso` of **your own** Xbox 360 disc (USA, Rev 1 / v1.1) and keep it somewhere handy.
+3. Double-click **`Setup-RB2-Windows.bat`**. It installs the free tools it needs (Windows will ask
+   permission a few times: click Yes), asks you to pick your `.iso`, checks it, builds the game
+   (30-90 minutes, you can walk away) and puts a **Raging Blast 2** shortcut on your desktop.
+4. Double-click the shortcut to play. A controller is recommended.
+
+If anything goes wrong the window says why in plain words; fix it and run the setup file again, it
+continues where it stopped. A log is saved to `out\setup-log.txt` for bug reports. You need about
+20 GB of free space and an internet connection for the first run. The game is built on your PC from
+your own disc, which is why there is no ready-made download: nothing from the game may be shared.
+
+## For developers (manual steps)
+
 ## What you need
 
 - Windows 10/11 x64 with a **Vulkan 1.1+** GPU driver.
