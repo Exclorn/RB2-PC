@@ -1,0 +1,36 @@
+name: Windows checks
+
+# Cannot build the game here (that needs a player's own default.xex). These checks catch the things
+# that can be checked without it: the scripts parse, the SDK download the setup relies on exists,
+# and no game content is in the tree.
+on:
+  push:
+  pull_request:
+
+jobs:
+  scripts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell scripts parse
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in 'tools/desktop/build_windows.ps1', 'tools/desktop/easy_setup.ps1') {
+            $errs = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
+            if ($errs) { $errs | ForEach-Object { Write-Host "$f : $_" }; $bad = 1 } else { Write-Host "ok: $f" }
+          }
+          exit $bad
+      - name: ReXGlue SDK v0.10.0 has a win-amd64 zip (the build script downloads it)
+        shell: pwsh
+        run: |
+          $rel = Invoke-RestMethod "https://api.github.com/repos/rexglue/rexglue-sdk/releases/tags/v0.10.0" -Headers @{ "User-Agent" = "ci"; Authorization = "Bearer ${{ github.token }}" }
+          $rel.assets | ForEach-Object { Write-Host "$($_.name)  $($_.size)" }
+          if (-not ($rel.assets | Where-Object { $_.name -like "*win-amd64*.zip" })) { throw "no win-amd64 zip in the SDK release" }
+
+  no-game-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/check_no_game_content.sh

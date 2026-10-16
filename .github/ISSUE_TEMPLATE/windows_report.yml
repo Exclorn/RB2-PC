@@ -1,0 +1,24 @@
+name: Windows report
+description: Tell us how the Windows (PC) build went
+labels: [windows-report]
+body:
+  - type: markdown
+    attributes:
+      value: "No game files, ISO links or `default.xex` in this issue, please. Attach `out/setup-log.txt` if setup failed."
+  - type: input
+    id: windows
+    attributes: {label: Windows version, description: "e.g. Windows 11 23H2"}
+    validations: {required: true}
+  - type: input
+    id: gpu
+    attributes: {label: GPU and driver version, description: "e.g. NVIDIA RTX 3060, 566.36"}
+    validations: {required: true}
+  - type: dropdown
+    id: stage
+    attributes:
+      label: How far did you get?
+      options: ["Setup failed (tools install)", "Setup failed (disc image check)", "Build failed", "Game does not start", "Black screen for ~5 s then closes", "Runs, with problems", "Plays well"]
+    validations: {required: true}
+  - type: textarea
+    id: details
+    attributes: {label: Details, description: "What you saw, fps, glitches, audio problems, controller used, the end of the log."}
