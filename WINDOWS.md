@@ -39,6 +39,23 @@ the source. On GitHub open the **Actions** tab, choose **Build SDK (Vulkan)** on
 workflow**, and wait for it to finish (about an hour). It publishes the SDK as a release of the repository, and
 the setup downloads it from there. Only needed once; players never see this step.
 
+## Optional: a ready-made game program (skips the long build)
+
+The setup first looks for a ready-made `rb2.exe`, so the long build is only needed once, by one person:
+1. Put an unzipped prebuilt (the contents of the zip) in a folder named `prebuilt` next to
+   `Setup-RB2-Windows.bat`, **or** upload the zip as an asset of a GitHub release tagged `rb2-prebuilt`; the
+   setup downloads it by itself. It is only used if its `BUILD-INFO.txt` matches your game version.
+2. Make the zip from your own finished build with `tools\desktop\package_prebuilt.ps1`.
+
+With a prebuilt the setup only extracts or checks your game files and takes about 10-20 minutes. It also accepts
+a folder you have already extracted instead of an `.iso`. To force a build from source even when a prebuilt is
+present, set the environment variable `RB2_FORCE_BUILD=1` first.
+
+**Legal note:** `rb2.exe` is a translation of the game's own executable. Giving it to other people is distributing
+a derivative of a copyrighted program, which carries legal risk for whoever shares it (the repository itself
+contains none, and `tools\check_no_game_content.sh` keeps it that way). Building it on your own PC from your own
+disc, as the setup does by default, shares nothing. Sharing a prebuilt is your decision; the Android port does it.
+
 ## For developers (manual steps)
 
 `tools\desktop\build_windows.ps1` does the build. It picks a toolchain automatically

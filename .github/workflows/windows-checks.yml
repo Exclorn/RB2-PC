@@ -17,7 +17,7 @@ jobs:
         shell: powershell
         run: |
           $bad = 0
-          foreach ($f in 'tools/desktop/build_windows.ps1', 'tools/desktop/toolchain.ps1', 'tools/desktop/easy_setup.ps1', 'tools/tests/xiso_selftest.ps1', 'tools/tests/toolchain_smoke.ps1') {
+          foreach ($f in 'tools/desktop/build_windows.ps1', 'tools/desktop/toolchain.ps1', 'tools/desktop/easy_setup.ps1', 'tools/desktop/package_prebuilt.ps1', 'tools/tests/xiso_selftest.ps1', 'tools/tests/toolchain_smoke.ps1') {
             $errs = $null
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
             if ($errs) { $errs | ForEach-Object { Write-Host "$f : $_" }; $bad = 1 } else { Write-Host "ok: $f" }
