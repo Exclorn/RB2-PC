@@ -2,7 +2,8 @@ name: Build SDK (Vulkan)
 
 # The stock ReXGlue SDK release for Windows only contains the Direct3D 12 renderer; Vulkan is a build-time
 # option that is off by default on Windows. This builds the unmodified v0.10.0 SDK with Vulkan on and
-# D3D12 off (which also avoids the SDK's AMD-copyrighted DXBC checksum source) and publishes it as a
+# D3D12 off, Release configuration only (the game build only needs Release; building Debug and
+# RelWithDebInfo too would roughly triple the time) (which also avoids the SDK's AMD-copyrighted DXBC checksum source) and publishes it as a
 # release of THIS repository, where tools/desktop/build_windows.ps1 downloads it from.
 #
 # The SDK contains no game data. Run it once: Actions tab > "Build SDK (Vulkan)" > Run workflow. It creates
@@ -19,7 +20,7 @@ env:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 180
+    timeout-minutes: 120
     steps:
       - name: Install toolchain
         run: choco install llvm ninja -y --no-progress
@@ -37,7 +38,8 @@ jobs:
         run: |
           cmake --preset win-amd64 \
             -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-            -DREXGLUE_USE_VULKAN=ON -DREXGLUE_USE_D3D12=OFF
+            -DREXGLUE_USE_VULKAN=ON -DREXGLUE_USE_D3D12=OFF \
+            "-DCMAKE_CONFIGURATION_TYPES=Release" -DCMAKE_DEFAULT_BUILD_TYPE=Release -DCMAKE_DEFAULT_CONFIGS=Release
           grep -E "Graphics: " -r out/build/win-amd64/CMakeCache.txt out/build/win-amd64/*.log 2>/dev/null || true
 
       - name: Build and install

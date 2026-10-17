@@ -157,6 +157,7 @@ Step "Configuring ($Config)"
 & cmake -S (Join-Path $Desktop "game") -B $build -G Ninja `
   "-DCMAKE_BUILD_TYPE=$Config" `
   @cmakeCompilerArgs `
+  "-DCMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO=Release" "-DCMAKE_MAP_IMPORTED_CONFIG_DEBUG=Release" `
   "-DCMAKE_PREFIX_PATH=$SdkPrefix"
 if ($LASTEXITCODE -ne 0) { Die "cmake configure failed" }
 
