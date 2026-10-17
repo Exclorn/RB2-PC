@@ -2,7 +2,7 @@
 
 A native Windows build of the Raging Blast 2 recompilation. The game's PowerPC code is
 translated to C++ from **your own** `default.xex` and compiled into `rb2.exe`, running on the ReXGlue
-SDK's **Direct3D 12** renderer.
+SDK's **Vulkan** renderer.
 
 **Status: experimental, untested on real hardware.** This is the first native Windows build path for
 this project; nothing here has been run on a Windows machine yet. Please report what happens (open a
@@ -32,7 +32,11 @@ Why can't this just be a ready-made download? The game's code has to be translat
 disc** on your own PC, and nothing derived from the game may be shared, so the build step can't be
 skipped. It's automated instead.
 
-**Needs:** Windows 10 (1803 or newer) or 11, 64-bit, and a GPU with **DirectX 12** support.
+**Needs:** Windows 10 (1803 or newer) or 11, 64-bit, and a GPU with a **Vulkan 1.1+** driver (check with GPU Caps Viewer or `vulkaninfo`; update your graphics driver if it's missing).
+
+**One-time step for the repository owner:** the Vulkan build of the SDK is produced by GitHub, not shipped in
+the source. Push the tag once: `git tag sdk-v0.10.0-vulkan && git push origin sdk-v0.10.0-vulkan`, wait for
+the **Build SDK (Vulkan)** run in the Actions tab to finish (about an hour), and the setup can download it.
 
 ## For developers (manual steps)
 
@@ -52,7 +56,7 @@ clang must target the **MSVC ABI**; MinGW will not work because the SDK exports 
    powershell -ExecutionPolicy Bypass -File tools\desktop\build_windows.ps1 -GameDir C:\rb2\game
    ```
 
-   It downloads the official ReXGlue SDK v0.10.0 win-amd64 release into `out\sdk`, runs codegen on your
+   It downloads the Vulkan build of ReXGlue SDK v0.10.0 into `out\sdk`, runs codegen on your
    `default.xex`, builds, and stages everything in `out\rb2-windows\`. Options: `-SdkPrefix <dir>`
    (use your own SDK install), `-Config Release|RelWithDebInfo|Debug`, `-SkipCodegen`, `-Toolchain`.
 
@@ -71,24 +75,25 @@ Self-test for the disc extractor (no game data, synthetic images): `pwsh tools\t
 - **`rexglue.exe` or codegen errors:** confirm the `default.xex` size and SHA-1 above.
 - **Link error about `roundevenf`:** `desktop/game/win_math_compat.cpp` is missing from the build
   (it is part of this repository; don't remove it).
-- **No win-amd64 asset found for the SDK:** build the SDK yourself, then pass `-SdkPrefix`.
-- **The game starts and then fails with a graphics error:** the stock SDK renders with Direct3D 12.
-  Update your GPU driver, and include your GPU model in the report. Old GPUs (roughly before 2012-2013)
-  may not be supported.
+- **The game starts and then fails with a graphics error, or a black window:** update your GPU driver and
+  confirm it reports Vulkan 1.1 or newer. Include your GPU model and the log in the report.
+- **The Vulkan SDK build was not found:** the repository owner has not run the one-time step above yet.
 
 ### Building the SDK from source
 
 ```powershell
 git clone --branch v0.10.0 --recurse-submodules https://github.com/rexglue/rexglue-sdk.git
 cd rexglue-sdk
-cmake --preset win-amd64
+cmake --preset win-amd64 -DREXGLUE_USE_VULKAN=ON -DREXGLUE_USE_D3D12=OFF
 cmake --build out\build\win-amd64 --config Release --target install --parallel
 # prefix: rexglue-sdk\out\install\win-amd64
 ```
 
 ## Notes
 
-The build uses the **stock** ReXGlue SDK v0.10.0. The game hooks are in `src/rb2_hooks.h` and
+The build uses the **unmodified** ReXGlue SDK v0.10.0, built with Vulkan on (it is off by default on Windows).
+The Project8Recomp project reports high CPU use and uneven frame pacing with the stock SDK on Windows and carries
+patches for it; none are applied here, so expect that to apply to this build too. The game hooks are in `src/rb2_hooks.h` and
 `src/rb2_resolution.h`. If the music is quiet or only plays on one speaker, report it: a mono-music quirk
 of the game's audio was seen on another platform and a workaround may be needed.
 

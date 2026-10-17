@@ -1,0 +1,87 @@
+name: Build SDK (Vulkan)
+
+# The stock ReXGlue SDK release for Windows only contains the Direct3D 12 renderer; Vulkan is a build-time
+# option that is off by default on Windows. This builds the unmodified v0.10.0 SDK with Vulkan on and
+# D3D12 off (which also avoids the SDK's AMD-copyrighted DXBC checksum source) and publishes it as a
+# release of THIS repository, where tools/desktop/build_windows.ps1 downloads it from.
+#
+# The SDK contains no game data. Run it once by pushing the tag, or by hand from the Actions tab:
+#   git tag sdk-v0.10.0-vulkan && git push origin sdk-v0.10.0-vulkan
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "sdk-v*-vulkan"
+
+permissions:
+  contents: write
+
+env:
+  SDK_TAG: v0.10.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Install toolchain
+        run: choco install llvm ninja -y --no-progress
+
+      - name: Get the SDK source (unmodified, with submodules)
+        shell: bash
+        run: |
+          git clone --branch "$SDK_TAG" --recurse-submodules --shallow-submodules --jobs 8 \
+            https://github.com/rexglue/rexglue-sdk.git sdk
+          echo "SDK commit: $(git -C sdk rev-parse HEAD)"
+
+      - name: Configure (Vulkan on, D3D12 off)
+        working-directory: sdk
+        shell: bash
+        run: |
+          cmake --preset win-amd64 \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+            -DREXGLUE_USE_VULKAN=ON -DREXGLUE_USE_D3D12=OFF
+          grep -E "Graphics: " -r out/build/win-amd64/CMakeCache.txt out/build/win-amd64/*.log 2>/dev/null || true
+
+      - name: Build and install
+        working-directory: sdk
+        run: cmake --build out/build/win-amd64 --target install --parallel
+
+      - name: Check it has what the game build needs
+        shell: bash
+        working-directory: sdk/out/install/win-amd64
+        run: |
+          set -e
+          ls bin | head -30
+          test -f bin/rexglue.exe
+          # the renderer plugin the game stages next to rb2.exe
+          find . -iname 'rexgpu-xenos*.dll' | tee /dev/stderr | grep -q .
+
+      - name: Package
+        shell: bash
+        run: |
+          cp sdk/LICENSE sdk/out/install/win-amd64/LICENSE-rexglue-sdk.txt
+          cat > sdk/out/install/win-amd64/BUILD-INFO.txt <<INFO
+          ReXGlue SDK $SDK_TAG (https://github.com/rexglue/rexglue-sdk), unmodified.
+          Built by this repository's build-sdk.yml with -DREXGLUE_USE_VULKAN=ON -DREXGLUE_USE_D3D12=OFF.
+          Contains no game data.
+          INFO
+          cd sdk/out/install
+          7z a "../../../rexglue-sdk-0.10.0-vulkan-win-amd64.zip" win-amd64
+
+      - name: Publish release (tag builds)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: rexglue-sdk-0.10.0-vulkan-win-amd64.zip
+          body: "Unmodified ReXGlue SDK v0.10.0 built with Vulkan on, D3D12 off, for the Windows build of Raging Blast 2. No game data."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Keep as a workflow artifact (manual runs)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rexglue-sdk-vulkan-win-amd64
+          path: rexglue-sdk-0.10.0-vulkan-win-amd64.zip
+          retention-days: 14

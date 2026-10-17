@@ -31,7 +31,9 @@ else()
     add_executable(rb2 ${RB2_SOURCES})
 endif()
 
-rexglue_setup_target(rb2)
+# GPU_PLUGINS xenos copies the renderer plugin (rexgpu-xenos.dll) next to rb2.exe; without it the game
+# starts and draws nothing.
+rexglue_setup_target(rb2 GPU_PLUGINS xenos)
 target_include_directories(rb2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src
     # main.cpp includes "generated/default/rb2_init.h"; codegen writes to desktop/generated/default.

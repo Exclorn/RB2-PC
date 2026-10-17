@@ -37,12 +37,6 @@ jobs:
             catch { Write-Host "BAD $($t.Name): $($_.Exception.Message)"; $bad = 1 }
           }
           exit $bad
-      - name: ReXGlue SDK v0.10.0 has a win-amd64 zip (the build script downloads it)
-        shell: pwsh
-        run: |
-          $rel = Invoke-RestMethod "https://api.github.com/repos/rexglue/rexglue-sdk/releases/tags/v0.10.0" -Headers @{ "User-Agent" = "ci"; Authorization = "Bearer ${{ github.token }}" }
-          $rel.assets | ForEach-Object { Write-Host "$($_.name)  $($_.size)" }
-          if (-not ($rel.assets | Where-Object { $_.name -like "*win-amd64*.zip" })) { throw "no win-amd64 zip in the SDK release" }
 
   no-game-content:
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@
   Build rb2.exe (Dragon Ball: Raging Blast 2 Recompiled) natively on Windows.
 
 .DESCRIPTION
-  1. Gets the ReXGlue SDK v0.10.0 for win-amd64 (downloads the official release, or uses -SdkPrefix).
+  1. Gets the ReXGlue SDK v0.10.0 for win-amd64 with the Vulkan renderer (downloads it, or uses -SdkPrefix).
   2. Runs codegen on YOUR extracted default.xex (nothing from the disc is ever committed or shipped).
   3. Configures and builds desktop/game with clang + Ninja, staging the SDK DLLs next to rb2.exe.
 
@@ -14,8 +14,8 @@
   extract your own ISO: python tools\xdvdfs.py my.iso C:\rb2\game
 
 .PARAMETER SdkPrefix
-  An existing SDK install prefix (the folder that contains bin\, lib\ and lib\cmake\rexglue).
-  Default: download the v0.10.0 win-amd64 release into out\sdk.
+  An existing SDK install prefix (the folder that contains bin\, lib\ and lib\cmake\rexglue), built
+  with Vulkan on. Default: download the Vulkan build of ReXGlue v0.10.0 published by this repository.
 
 .PARAMETER Config
   Release, RelWithDebInfo (default) or Debug.
@@ -37,12 +37,14 @@ param(
   [string]$SdkPrefix = "",
   [ValidateSet("Release", "RelWithDebInfo", "Debug")][string]$Config = "RelWithDebInfo",
   [switch]$SkipCodegen,
-  [ValidateSet("Auto", "VisualStudio", "Portable")][string]$Toolchain = "Auto"
+  [ValidateSet("Auto", "VisualStudio", "Portable")][string]$Toolchain = "Auto",
+  # Where the Vulkan-enabled ReXGlue SDK build is published (see .github/workflows/build-sdk.yml).
+  [string]$SdkRepo = "Exclorn/rb2-android",
+  [string]$SdkReleaseTag = "sdk-v0.10.0-vulkan"
 )
 $ErrorActionPreference = "Stop"
 # Older Windows 10 builds default to TLS versions GitHub refuses.
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-$SdkTag = "v0.10.0"
 
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Desktop = Join-Path $Repo "desktop"
@@ -97,18 +99,22 @@ if ($mode -eq "VisualStudio") {
 Write-Host (& clang --version | Select-Object -First 1)
 
 # --- SDK -----------------------------------------------------------------------------------------
+# The game renders with Vulkan. On Windows the stock ReXGlue SDK release is built with Direct3D 12 only
+# (Vulkan is a build-time option there, off by default), so this uses an unmodified ReXGlue v0.10.0 built
+# with Vulkan on and D3D12 off, published as a release of this repository by build-sdk.yml.
 if (-not $SdkPrefix) {
   $sdkRoot = Join-Path $Out "sdk"
   $SdkPrefix = Join-Path $sdkRoot "win-amd64"
   if (-not (Test-Path (Join-Path $SdkPrefix "bin\rexglue.exe"))) {
-    Step "Downloading ReXGlue SDK $SdkTag (win-amd64)"
+    Step "Downloading the ReXGlue SDK (Vulkan build, $SdkReleaseTag)"
     New-Item -ItemType Directory -Force $sdkRoot | Out-Null
-    $rel = Invoke-RestMethod "https://api.github.com/repos/rexglue/rexglue-sdk/releases/tags/$SdkTag" `
-      -Headers @{ "User-Agent" = "rb2-build" }
-    $asset = $rel.assets | Where-Object { $_.name -like "*win-amd64*.zip" } | Select-Object -First 1
-    if (-not $asset) {
-      Die "Release $SdkTag has no win-amd64 zip. Build the SDK yourself (see WINDOWS.md, 'Building the SDK from source') and pass -SdkPrefix."
+    try {
+      $rel = Invoke-RestMethod "https://api.github.com/repos/$SdkRepo/releases/tags/$SdkReleaseTag" -Headers @{ "User-Agent" = "rb2-build" }
+    } catch {
+      Die "The Vulkan SDK build '$SdkReleaseTag' was not found in $SdkRepo. The repository owner needs to run the 'Build SDK (Vulkan)' workflow once (Actions tab), or you can build the SDK yourself (see WINDOWS.md) and pass -SdkPrefix."
     }
+    $asset = $rel.assets | Where-Object { $_.name -like "*vulkan*win-amd64*.zip" } | Select-Object -First 1
+    if (-not $asset) { Die "Release $SdkReleaseTag has no Vulkan win-amd64 zip." }
     $zip = Join-Path $sdkRoot $asset.name
     Get-PortableFile $asset.browser_download_url $zip
     & (Join-Path $env:SystemRoot "System32\tar.exe") -xf $zip -C $sdkRoot
@@ -164,6 +170,11 @@ Step "Staging $dist"
 New-Item -ItemType Directory -Force $dist | Out-Null
 Copy-Item (Join-Path $build "rb2.exe") $dist -Force
 Get-ChildItem $build -Filter *.dll | Copy-Item -Destination $dist -Force
+# The renderer is a separate plugin file. Without it the game opens a window and draws nothing, so
+# refuse to call the build finished if it is missing.
+if (-not (Test-Path (Join-Path $dist "rexgpu-xenos.dll"))) {
+  Die "rexgpu-xenos.dll (the graphics plugin) was not produced next to rb2.exe. The SDK build in use may lack it; see WINDOWS.md."
+}
 Write-Host ""
 Write-Host "Built: $dist\rb2.exe" -ForegroundColor Green
 Write-Host "Run:   $dist\rb2.exe `"$GameDir`""

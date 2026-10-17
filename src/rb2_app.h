@@ -19,6 +19,14 @@ class Rb2App : public rex::ReXApp {
     return std::unique_ptr<Rb2App>(new Rb2App(ctx, "rb2", PPCImageConfig));
   }
 
+  // The SDK's gpu_plugin setting defaults to empty, which means no GPU emulation at all (a window that
+  // draws nothing). This game always needs the Xenos plugin, so select it unless the user chose another.
+  void OnPreSetup(rex::RuntimeConfig& config) override {
+    if (config.gpu_plugin.empty()) {
+      config.gpu_plugin = "xenos";
+    }
+  }
+
   // The runtime compiles the per-frame perf-counter CSV writer in, but nothing in the SDK opens
   // the --perf_log_csv file: wire it once logging is up (same as Project8Recomp).
   void OnPostSetup() override {
