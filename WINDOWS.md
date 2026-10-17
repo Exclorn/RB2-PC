@@ -2,7 +2,7 @@
 
 A native Windows build of the Raging Blast 2 recompilation. The game's PowerPC code is
 translated to C++ from **your own** `default.xex` and compiled into `rb2.exe`, running on the ReXGlue
-SDK's Vulkan renderer.
+SDK's **Direct3D 12** renderer.
 
 **Status: experimental, untested on real hardware.** This is the first native Windows build path for
 this project; nothing here has been run on a Windows machine yet. Please report what happens (open a
@@ -12,45 +12,39 @@ No game data is included or distributed. You need your own legally obtained copy
 **USA, Rev 1** (title ID 4E4D0826). Your extracted `default.xex` must be 7,151,616 bytes with SHA-1
 `F57B501FA2CDD309C2C56B76A5F297ACBC564FD2`. Other releases and regions are not supported.
 
-## Easy way (no coding)
+## Easy way (nothing to install)
 
 1. On the repository page click **Code > Download ZIP**, then unzip it to a **short folder**
    such as `C:\RB2` (long folder names break the build).
 2. Make an `.iso` of **your own** Xbox 360 disc (USA, Rev 1 / v1.1) and keep it somewhere handy.
-3. Double-click **`Setup-RB2-Windows.bat`**. It installs the free tools it needs (Windows will ask
-   permission a few times: click Yes), asks you to pick your `.iso`, checks it, builds the game
-   (30-90 minutes, you can walk away) and puts a **Raging Blast 2** shortcut on your desktop.
+3. Double-click **`Setup-RB2-Windows.bat`**, accept Microsoft's licence terms when asked, and pick your
+   `.iso` in the window that opens. That's all you do. It extracts and checks the disc image, downloads
+   portable build tools into the folder (no installer, no admin rights, nothing system-wide), builds
+   the game (30-90 minutes, you can walk away) and puts a **Raging Blast 2** shortcut on your desktop.
 4. Double-click the shortcut to play. A controller is recommended.
 
 If anything goes wrong the window says why in plain words; fix it and run the setup file again, it
 continues where it stopped. A log is saved to `out\setup-log.txt` for bug reports. You need about
-20 GB of free space and an internet connection for the first run. The game is built on your PC from
-your own disc, which is why there is no ready-made download: nothing from the game may be shared.
+25 GB of free space and an internet connection for the first run (roughly 3 GB of downloads). To
+uninstall, delete the folder, the desktop shortcut and `%LOCALAPPDATA%\RB2Recomp`.
+
+Why can't this just be a ready-made download? The game's code has to be translated from **your own
+disc** on your own PC, and nothing derived from the game may be shared, so the build step can't be
+skipped. It's automated instead.
+
+**Needs:** Windows 10 (1803 or newer) or 11, 64-bit, and a GPU with **DirectX 12** support.
 
 ## For developers (manual steps)
 
-## What you need
+`tools\desktop\build_windows.ps1` does the build. It picks a toolchain automatically
+(`-Toolchain Auto|VisualStudio|Portable`): an existing Visual Studio / Build Tools install that has the
+*C++ Clang tools* component plus CMake and Ninja, otherwise the portable download in `out\toolchain`.
+clang must target the **MSVC ABI**; MinGW will not work because the SDK exports MSVC-mangled C++.
 
-- Windows 10/11 x64 with a **Vulkan 1.1+** GPU driver.
-- **Build Tools for Visual Studio 2022** (workload *Desktop development with C++*, which brings the
-  Windows SDK). Add the *C++ Clang tools for Windows* component, or install LLVM separately.
-- CMake 3.25+, Ninja, Python 3, Git:
-  `winget install Kitware.CMake Ninja-build.Ninja Python.Python.3.12 Git.Git LLVM.LLVM`
-- About 10 GB free, and patience: the first build compiles roughly 12,000 recompiled functions.
-
-clang must target the **MSVC ABI** (the default for clang on Windows). MinGW will not work: the SDK
-exports MSVC-mangled C++.
-
-## Steps
-
-1. **Extract your disc image** (an XISO or redump-style XGD2/XGD3 `.iso`):
-
-   ```powershell
-   python tools\xdvdfs.py C:\path\to\your-own-dump.iso C:\rb2\game
-   ```
-
-   A complete extraction holds `default.xex`, `nxeart`, and in `data\X360\` six
-   `st_pack_*_pt_x360.afs` packs, `st_pack_x360.dir` and `movie\*.wmv`.
+1. **Extract your disc image** (an XISO or redump-style XGD2/XGD3 `.iso`). Without Python, the setup's
+   extractor (`tools\desktop\Xiso.cs`) does it; or with Python: `python tools\xdvdfs.py disc.iso C:\rb2\game`.
+   A complete extraction holds `default.xex`, `nxeart`, and in `data\X360\` six `st_pack_*_pt_x360.afs`
+   packs, `st_pack_x360.dir` and `movie\*.wmv`.
 
 2. **Build:**
 
@@ -58,21 +52,17 @@ exports MSVC-mangled C++.
    powershell -ExecutionPolicy Bypass -File tools\desktop\build_windows.ps1 -GameDir C:\rb2\game
    ```
 
-   The script loads the Visual Studio environment, downloads the official ReXGlue SDK v0.10.0
-   win-amd64 release into `out\sdk`, runs codegen on your `default.xex`, builds, and stages
-   everything in `out\rb2-windows\`. Options: `-SdkPrefix <dir>` (use your own SDK install),
-   `-Config Release|RelWithDebInfo|Debug`, `-SkipCodegen` (reuse an earlier codegen).
+   It downloads the official ReXGlue SDK v0.10.0 win-amd64 release into `out\sdk`, runs codegen on your
+   `default.xex`, builds, and stages everything in `out\rb2-windows\`. Options: `-SdkPrefix <dir>`
+   (use your own SDK install), `-Config Release|RelWithDebInfo|Debug`, `-SkipCodegen`, `-Toolchain`.
 
-3. **Run:**
-
-   ```powershell
-   out\rb2-windows\rb2.exe C:\rb2\game
-   ```
-
-   The first argument is the extracted game folder. Extra options are passed as `--name=value` (for example `--rb2_render_scale=75`,
+3. **Run:** `out\rb2-windows\rb2.exe C:\rb2\game`. The first argument is the extracted game folder.
+   Extra options are passed as `--name=value` (for example `--rb2_render_scale=75`,
    `--rb2_vsync_hz=60`, `--rb2_trace_loads=true` for debugging a failed boot).
 
 Input comes from the SDK's SDL3 layer; a controller is recommended (keyboard mapping is untested).
+
+Self-test for the disc extractor (no game data, synthetic images): `pwsh tools\tests\xiso_selftest.ps1`.
 
 ## Troubleshooting
 
@@ -82,6 +72,9 @@ Input comes from the SDK's SDL3 layer; a controller is recommended (keyboard map
 - **Link error about `roundevenf`:** `desktop/game/win_math_compat.cpp` is missing from the build
   (it is part of this repository; don't remove it).
 - **No win-amd64 asset found for the SDK:** build the SDK yourself, then pass `-SdkPrefix`.
+- **The game starts and then fails with a graphics error:** the stock SDK renders with Direct3D 12.
+  Update your GPU driver, and include your GPU model in the report. Old GPUs (roughly before 2012-2013)
+  may not be supported.
 
 ### Building the SDK from source
 

@@ -10,8 +10,8 @@ emulator.
 
 1. Click **Code > Download ZIP** and unzip it to a **short folder** such as `C:\RB2`.
 2. Make an `.iso` of **your own** Xbox 360 disc (USA, Rev 1 / v1.1).
-3. Double-click **`Setup-RB2-Windows.bat`** and follow the prompts. It installs the tools it needs,
-   checks your disc image, builds the game and adds a desktop shortcut.
+3. Double-click **`Setup-RB2-Windows.bat`** and follow the prompts. Nothing gets installed: it checks your
+   disc image, downloads portable build tools into the folder, builds the game and adds a desktop shortcut.
 
 Details, requirements and troubleshooting: **[WINDOWS.md](WINDOWS.md)**.
 

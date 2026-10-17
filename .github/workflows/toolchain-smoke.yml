@@ -1,0 +1,26 @@
+name: Portable toolchain smoke test
+
+# Sets up the portable build tools exactly as the setup does (downloads about 3 GB, including
+# Microsoft's C++ headers via xwin), then compiles, links and runs a tiny program with the game
+# build's compiler arguments. No game data. Runs when the toolchain files change, or by hand.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "tools/desktop/toolchain.ps1"
+      - "tools/tests/toolchain_smoke.ps1"
+      - ".github/workflows/toolchain-smoke.yml"
+  pull_request:
+    paths:
+      - "tools/desktop/toolchain.ps1"
+      - "tools/tests/toolchain_smoke.ps1"
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Portable toolchain builds and runs a program
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/tests/toolchain_smoke.ps1 -Root "$env:RUNNER_TEMP\\toolchain"

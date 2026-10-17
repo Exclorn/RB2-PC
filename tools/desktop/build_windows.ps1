@@ -23,6 +23,11 @@
 .PARAMETER SkipCodegen
   Reuse desktop\generated from an earlier run.
 
+.PARAMETER Toolchain
+  Portable: download clang, CMake, Ninja and Microsoft's C++ headers into out\toolchain (nothing is
+  installed, no admin rights needed). VisualStudio: use an existing Visual Studio / Build Tools install.
+  Auto (default): Visual Studio if it has the C++ tools and clang, otherwise Portable.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools\desktop\build_windows.ps1 -GameDir C:\rb2\game
 #>
@@ -31,15 +36,19 @@ param(
   [Parameter(Mandatory = $true)][string]$GameDir,
   [string]$SdkPrefix = "",
   [ValidateSet("Release", "RelWithDebInfo", "Debug")][string]$Config = "RelWithDebInfo",
-  [switch]$SkipCodegen
+  [switch]$SkipCodegen,
+  [ValidateSet("Auto", "VisualStudio", "Portable")][string]$Toolchain = "Auto"
 )
 $ErrorActionPreference = "Stop"
+# Older Windows 10 builds default to TLS versions GitHub refuses.
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 $SdkTag = "v0.10.0"
 
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Desktop = Join-Path $Repo "desktop"
 $Out = Join-Path $Repo "out"
 $GameDir = (Resolve-Path $GameDir).Path
+. (Join-Path $PSScriptRoot "toolchain.ps1")
 
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Die($m) { Write-Host "error: $m" -ForegroundColor Red; exit 1 }
@@ -49,28 +58,43 @@ function Need($exe, $hint) {
 
 if (-not (Test-Path (Join-Path $GameDir "default.xex"))) { Die "no default.xex in $GameDir" }
 
-# --- Visual Studio environment (Windows SDK + MSVC CRT/STL that clang targets) -----------------
-Step "Loading the Visual Studio build environment"
-$vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-if (-not (Test-Path $vswhere)) {
-  Die "Visual Studio Build Tools not found. Install 'Build Tools for Visual Studio 2022' with the 'Desktop development with C++' workload (includes the Windows SDK and 'C++ Clang tools')."
+# --- Compiler toolchain --------------------------------------------------------------------------
+function Find-VisualStudio {
+  $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+  if (-not (Test-Path $vswhere)) { return $null }
+  $p = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+  if ($p) { return $p } else { return $null }
 }
-$vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-if (-not $vsPath) { Die "No Visual Studio install with the C++ x64 tools was found." }
-$vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
-cmd /c "`"$vcvars`" >nul && set" | ForEach-Object {
-  if ($_ -match "^([^=]+)=(.*)$") { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], "Process") }
+$vsPath = Find-VisualStudio
+$vsHasClang = $false
+if ($vsPath) {
+  $vsLlvm = Join-Path $vsPath "VC\Tools\Llvm\x64\bin"
+  $vsHasClang = (Test-Path (Join-Path $vsLlvm "clang.exe")) -or [bool](Get-Command clang -ErrorAction SilentlyContinue)
 }
-# The LLVM that ships with Visual Studio, if the standalone one is not installed.
-$vsLlvm = Join-Path $vsPath "VC\Tools\Llvm\x64\bin"
-if ((-not (Get-Command clang -ErrorAction SilentlyContinue)) -and (Test-Path $vsLlvm)) {
-  $env:PATH = "$vsLlvm;$env:PATH"
+$mode = $Toolchain
+if ($mode -eq "Auto") { $mode = if ($vsPath -and $vsHasClang -and (Get-Command cmake -ErrorAction SilentlyContinue) -and (Get-Command ninja -ErrorAction SilentlyContinue)) { "VisualStudio" } else { "Portable" } }
+
+if ($mode -eq "VisualStudio") {
+  Step "Using Visual Studio's build environment"
+  if (-not $vsPath) { Die "Visual Studio with the C++ x64 tools was not found. Use -Toolchain Portable." }
+  $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+  cmd /c "`"$vcvars`" >nul && set" | ForEach-Object {
+    if ($_ -match "^([^=]+)=(.*)$") { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], "Process") }
+  }
+  $vsLlvm = Join-Path $vsPath "VC\Tools\Llvm\x64\bin"
+  if ((-not (Get-Command clang -ErrorAction SilentlyContinue)) -and (Test-Path $vsLlvm)) { $env:PATH = "$vsLlvm;$env:PATH" }
+  Need clang "Add the 'C++ Clang tools for Windows' Visual Studio component, or use -Toolchain Portable."
+  Need cmake "Install CMake 3.25+, or use -Toolchain Portable."
+  Need ninja "Install Ninja, or use -Toolchain Portable."
+  $cmakeCompilerArgs = @("-DCMAKE_C_COMPILER=clang", "-DCMAKE_CXX_COMPILER=clang++",
+    "-DCMAKE_C_FLAGS=-march=x86-64-v2", "-DCMAKE_CXX_FLAGS=-march=x86-64-v2")
+} else {
+  Step "Preparing the portable build tools (downloads once; nothing is installed)"
+  try { Use-PortableToolchain -Root (Join-Path $Out "toolchain") } catch { Die $_.Exception.Message }
+  $cmakeCompilerArgs = Get-PortableCMakeArgs
+  if ($Config -eq "Debug") { Write-Host "note: Debug needs Microsoft's debug runtime; using RelWithDebInfo instead."; $Config = "RelWithDebInfo" }
 }
-Need clang "Install LLVM (winget install LLVM.LLVM) or the 'C++ Clang tools for Windows' VS component."
-Need cmake "Install CMake 3.25+ (winget install Kitware.CMake)."
-Need ninja "Install Ninja (winget install Ninja-build.Ninja)."
-$clangVer = (& clang --version | Select-Object -First 1)
-Write-Host $clangVer
+Write-Host (& clang --version | Select-Object -First 1)
 
 # --- SDK -----------------------------------------------------------------------------------------
 if (-not $SdkPrefix) {
@@ -86,8 +110,9 @@ if (-not $SdkPrefix) {
       Die "Release $SdkTag has no win-amd64 zip. Build the SDK yourself (see WINDOWS.md, 'Building the SDK from source') and pass -SdkPrefix."
     }
     $zip = Join-Path $sdkRoot $asset.name
-    Invoke-WebRequest $asset.browser_download_url -OutFile $zip -Headers @{ "User-Agent" = "rb2-build" }
-    Expand-Archive $zip -DestinationPath $sdkRoot -Force
+    Get-PortableFile $asset.browser_download_url $zip
+    & (Join-Path $env:SystemRoot "System32\tar.exe") -xf $zip -C $sdkRoot
+    if ($LASTEXITCODE -ne 0) { Die "could not unpack the SDK download." }
   }
 }
 $SdkPrefix = (Resolve-Path $SdkPrefix).Path
@@ -125,8 +150,7 @@ $build = Join-Path $Desktop "build-win"
 Step "Configuring ($Config)"
 & cmake -S (Join-Path $Desktop "game") -B $build -G Ninja `
   "-DCMAKE_BUILD_TYPE=$Config" `
-  "-DCMAKE_C_COMPILER=clang" "-DCMAKE_CXX_COMPILER=clang++" `
-  "-DCMAKE_C_FLAGS=-march=x86-64-v2" "-DCMAKE_CXX_FLAGS=-march=x86-64-v2" `
+  @cmakeCompilerArgs `
   "-DCMAKE_PREFIX_PATH=$SdkPrefix"
 if ($LASTEXITCODE -ne 0) { Die "cmake configure failed" }
 

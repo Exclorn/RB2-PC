@@ -12,14 +12,29 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      # Windows PowerShell 5.1 ("powershell"), the one players have, not PowerShell 7.
       - name: PowerShell scripts parse
-        shell: pwsh
+        shell: powershell
         run: |
           $bad = 0
-          foreach ($f in 'tools/desktop/build_windows.ps1', 'tools/desktop/easy_setup.ps1') {
+          foreach ($f in 'tools/desktop/build_windows.ps1', 'tools/desktop/toolchain.ps1', 'tools/desktop/easy_setup.ps1', 'tools/tests/xiso_selftest.ps1', 'tools/tests/toolchain_smoke.ps1') {
             $errs = $null
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
             if ($errs) { $errs | ForEach-Object { Write-Host "$f : $_" }; $bad = 1 } else { Write-Host "ok: $f" }
+          }
+          exit $bad
+      - name: Disc extractor self-test (synthetic images, C# 5 compile under PowerShell 5.1)
+        shell: powershell
+        run: powershell -NoProfile -File tools/tests/xiso_selftest.ps1
+      - name: Pinned toolchain downloads are still reachable
+        shell: powershell
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          . tools/desktop/toolchain.ps1
+          $bad = 0
+          foreach ($t in $script:PortableTools) {
+            try { $r = Invoke-WebRequest $t.Url -Method Head -UseBasicParsing; Write-Host "ok  $($t.Name)  $($r.StatusCode)" }
+            catch { Write-Host "BAD $($t.Name): $($_.Exception.Message)"; $bad = 1 }
           }
           exit $bad
       - name: ReXGlue SDK v0.10.0 has a win-amd64 zip (the build script downloads it)
