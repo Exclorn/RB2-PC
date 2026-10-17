@@ -5,13 +5,10 @@ name: Build SDK (Vulkan)
 # D3D12 off (which also avoids the SDK's AMD-copyrighted DXBC checksum source) and publishes it as a
 # release of THIS repository, where tools/desktop/build_windows.ps1 downloads it from.
 #
-# The SDK contains no game data. Run it once by pushing the tag, or by hand from the Actions tab:
-#   git tag sdk-v0.10.0-vulkan && git push origin sdk-v0.10.0-vulkan
+# The SDK contains no game data. Run it once: Actions tab > "Build SDK (Vulkan)" > Run workflow. It creates
+# the release (tag sdk-v0.10.0-vulkan) by itself.
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "sdk-v*-vulkan"
 
 permissions:
   contents: write
@@ -69,19 +66,13 @@ jobs:
           cd sdk/out/install
           7z a "../../../rexglue-sdk-0.10.0-vulkan-win-amd64.zip" win-amd64
 
-      - name: Publish release (tag builds)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: sdk-v0.10.0-vulkan
+          target_commitish: ${{ github.sha }}
+          name: ReXGlue SDK v0.10.0 (Vulkan build for Windows)
           files: rexglue-sdk-0.10.0-vulkan-win-amd64.zip
           body: "Unmodified ReXGlue SDK v0.10.0 built with Vulkan on, D3D12 off, for the Windows build of Raging Blast 2. No game data."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Keep as a workflow artifact (manual runs)
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: rexglue-sdk-vulkan-win-amd64
-          path: rexglue-sdk-0.10.0-vulkan-win-amd64.zip
-          retention-days: 14

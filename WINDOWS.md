@@ -35,8 +35,9 @@ skipped. It's automated instead.
 **Needs:** Windows 10 (1803 or newer) or 11, 64-bit, and a GPU with a **Vulkan 1.1+** driver (check with GPU Caps Viewer or `vulkaninfo`; update your graphics driver if it's missing).
 
 **One-time step for the repository owner:** the Vulkan build of the SDK is produced by GitHub, not shipped in
-the source. Push the tag once: `git tag sdk-v0.10.0-vulkan && git push origin sdk-v0.10.0-vulkan`, wait for
-the **Build SDK (Vulkan)** run in the Actions tab to finish (about an hour), and the setup can download it.
+the source. On GitHub open the **Actions** tab, choose **Build SDK (Vulkan)** on the left, press **Run
+workflow**, and wait for it to finish (about an hour). It publishes the SDK as a release of the repository, and
+the setup downloads it from there. Only needed once; players never see this step.
 
 ## For developers (manual steps)
 
