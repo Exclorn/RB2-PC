@@ -140,6 +140,9 @@ if (-not $SkipCodegen) {
   $manifest = $manifest.Replace("REPLACE_ME", ($GameDir -replace "\\", "/"))
   # UTF-8 without a BOM (Windows PowerShell 5.1's -Encoding utf8 would add one).
   [IO.File]::WriteAllText((Join-Path $cfgDir "rb2_manifest.local.toml"), $manifest, (New-Object Text.UTF8Encoding($false)))
+  # The build re-runs codegen as a build step and looks for the manifest next to the game sources
+  # (desktop\game\rb2_manifest.toml); both folders sit beside desktop\generated, so paths resolve the same.
+  [IO.File]::WriteAllText((Join-Path $Desktop "game\rb2_manifest.toml"), $manifest, (New-Object Text.UTF8Encoding($false)))
   Push-Location $cfgDir
   try {
     $env:PATH = "$(Split-Path $rexglue);$env:PATH"
