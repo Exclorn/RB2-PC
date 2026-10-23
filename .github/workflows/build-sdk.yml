@@ -54,7 +54,8 @@ jobs:
           ls bin | head -30
           test -f bin/rexglue.exe
           # the renderer plugin the game stages next to rb2.exe
-          find . -iname 'rexgpu-xenos*.dll' | tee /dev/stderr | grep -q .
+          find . -iname 'rexgpu-xenos*.dll'
+          test -n "$(find . -iname 'rexgpu-xenos*.dll')"
 
       - name: Package
         shell: bash

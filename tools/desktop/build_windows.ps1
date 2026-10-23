@@ -173,8 +173,8 @@ Copy-Item (Join-Path $build "rb2.exe") $dist -Force
 Get-ChildItem $build -Filter *.dll | Copy-Item -Destination $dist -Force
 # The renderer is a separate plugin file. Without it the game opens a window and draws nothing, so
 # refuse to call the build finished if it is missing.
-if (-not (Test-Path (Join-Path $dist "rexgpu-xenos.dll"))) {
-  Die "rexgpu-xenos.dll (the graphics plugin) was not produced next to rb2.exe. The SDK build in use may lack it; see WINDOWS.md."
+if (-not (Get-ChildItem $dist -Filter "rexgpu-xenos*.dll" -ErrorAction SilentlyContinue)) {
+  Die "rexgpu-xenos*.dll (the graphics plugin) was not produced next to rb2.exe. The SDK build in use may lack it; see WINDOWS.md."
 }
 Write-Host ""
 Write-Host "Built: $dist\rb2.exe" -ForegroundColor Green

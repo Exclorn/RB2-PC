@@ -20,9 +20,8 @@ $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Dist = Join-Path $Repo "out\rb2-windows"
 $XexSha1 = "F57B501FA2CDD309C2C56B76A5F297ACBC564FD2"
 
-foreach ($f in "rb2.exe", "rexgpu-xenos.dll") {
-  if (-not (Test-Path (Join-Path $Dist $f))) { throw "$f is missing from $Dist. Build first (Setup-RB2-Windows.bat)." }
-}
+if (-not (Test-Path (Join-Path $Dist "rb2.exe"))) { throw "rb2.exe is missing from $Dist. Build first (Setup-RB2-Windows.bat)." }
+if (-not (Get-ChildItem $Dist -Filter "rexgpu-xenos*.dll" -ErrorAction SilentlyContinue)) { throw "the graphics plugin (rexgpu-xenos*.dll) is missing from $Dist. Build first (Setup-RB2-Windows.bat)." }
 Write-Host "rb2.exe is a translation of the game's executable. Sharing it is a legal risk for you (see the notes in this script)."
 if (-not $Yes) {
   $a = Read-Host "Type YES to create the package anyway"

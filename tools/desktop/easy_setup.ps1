@@ -128,7 +128,7 @@ if ($problem) {
 # --- 2. The game program ---------------------------------------------------------------------------
 Title 2 "Getting the game program (rb2.exe)"
 $Dist = Join-Path $Out "rb2-windows"
-function HaveProgram($dir) { return (Test-Path (Join-Path $dir "rb2.exe")) -and (Test-Path (Join-Path $dir "rexgpu-xenos.dll")) }
+function HaveProgram($dir) { return (Test-Path (Join-Path $dir "rb2.exe")) -and [bool](Get-ChildItem $dir -Filter "rexgpu-xenos*.dll" -ErrorAction SilentlyContinue) }
 function UsePrebuilt($srcDir) {
   # A prebuilt folder must hold the exe AND the graphics plugin (or the game would draw nothing), and
   # BUILD-INFO.txt must say it was built for the exact game executable the user has (or it would crash).
