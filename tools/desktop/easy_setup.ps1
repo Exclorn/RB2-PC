@@ -146,6 +146,32 @@ $haveProgram = HaveProgram $Dist
 $force = [bool]$env:RB2_FORCE_BUILD
 if ($haveProgram) { Say "  The game program from an earlier run is in place." }
 if (-not $haveProgram -and -not $force) {
+  # A zip downloaded from the cloud build can just be dropped next to this setup (or into 'prebuilt'):
+  # unpack it here, including the zip GitHub puts inside its own zip. Uses Windows' own tar.exe because
+  # Explorer sometimes refuses these files with a bogus "password needed" message.
+  $tarExe = Join-Path $env:SystemRoot "System32\tar.exe"
+  $zips = @(Get-ChildItem $Repo -Filter "*.zip" -File -ErrorAction SilentlyContinue) +
+          @(Get-ChildItem (Join-Path $Repo "prebuilt") -Filter "*.zip" -File -ErrorAction SilentlyContinue)
+  foreach ($z in $zips) {
+    $tmp = Join-Path $Out "prebuilt-zip"
+    if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+    New-Item -ItemType Directory -Force $tmp | Out-Null
+    try {
+      & $tarExe -xf $z.FullName -C $tmp 2>$null
+      for ($i = 0; $i -lt 2; $i++) {   # zip inside a zip
+        foreach ($inner in (Get-ChildItem $tmp -Recurse -Filter "*.zip" -File)) {
+          $dest = Join-Path $inner.DirectoryName ([IO.Path]::GetFileNameWithoutExtension($inner.Name) + "-unpacked")
+          if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Force $dest | Out-Null; & $tarExe -xf $inner.FullName -C $dest 2>$null }
+        }
+      }
+    } catch { }
+    $root = Get-ChildItem $tmp -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { HaveProgram $_.FullName } | Select-Object -First 1
+    $dir = if (HaveProgram $tmp) { $tmp } elseif ($root) { $root.FullName } else { $null }
+    if ($dir -and (UsePrebuilt $dir)) { $haveProgram = $true; Say "  Using the ready-made game program from $($z.Name)."; break }
+  }
+  if (Test-Path (Join-Path $Out "prebuilt-zip")) { Remove-Item (Join-Path $Out "prebuilt-zip") -Recurse -Force -ErrorAction SilentlyContinue }
+}
+if (-not $haveProgram -and -not $force) {
   $local = Join-Path $Repo "prebuilt"
   if (UsePrebuilt $local) { Say "  Using the ready-made game program in the 'prebuilt' folder."; $haveProgram = $true }
 }
