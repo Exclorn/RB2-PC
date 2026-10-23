@@ -1,0 +1,44 @@
+name: Build game program (private repos only)
+
+# Builds rb2.exe on a GitHub Windows machine so your own PC does not have to compile for hours.
+# It needs YOUR default.xex, so it REFUSES to run in a public repository: put it in a PRIVATE copy of
+# this project (see WINDOWS.md, "Build it in the cloud"). The result is a private workflow artifact only
+# you can download. Nothing is published. Sharing the result later is your own decision and legal risk.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ github.event.repository.private == true }}
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check default.xex
+        shell: pwsh
+        run: |
+          $x = "game/default.xex"
+          if (-not (Test-Path $x)) { throw "Put your default.xex at game/default.xex in this private repo (Add file > Upload files)." }
+          $h = (Get-FileHash $x -Algorithm SHA1).Hash
+          if ($h -ne "F57B501FA2CDD309C2C56B76A5F297ACBC564FD2") { throw "default.xex is not the supported USA Rev 1 version (SHA-1 $h)." }
+
+      - name: Install LLVM and Ninja
+        run: choco install llvm ninja -y --no-progress
+
+      - name: Build
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/desktop/build_windows.ps1 -GameDir game -Config Release -Toolchain Auto
+
+      - name: Package
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/desktop/package_prebuilt.ps1 -Yes
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rb2-windows-prebuilt
+          path: out/rb2-windows-prebuilt.zip
+          retention-days: 7

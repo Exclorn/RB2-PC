@@ -124,3 +124,16 @@ This repository contains no game data: no disc image, `default.xex`, extracted f
 code. `out/` and `desktop/generated/` are git-ignored; never commit them or share the built
 `rb2.exe` together with generated code, since that is a translation of the game's executable.
 `desktop/game/win_math_compat.cpp` is vendored from Project8Recomp (BSD-3-Clause).
+
+
+## Build it in the cloud (slow PC? skip the hours-long compile)
+
+GitHub's free Windows machines are much faster than a laptop CPU. This needs YOUR `default.xex`, so do it in a
+**private** repository (the workflow refuses to run in a public one).
+
+1. Create a new **private** repo on GitHub. Upload this project's files into it (Add file > Upload files).
+2. In it, upload your `default.xex` as `game/default.xex` (same way).
+3. Actions tab > "Build game program (private repos only)" > Run workflow.
+4. When it is green, open the run, download the artifact `rb2-windows-prebuilt` and unzip it.
+5. Put the unzipped files in a folder named `prebuilt` next to `Setup-RB2-Windows.bat` and run the setup.
+   It skips the compile.
