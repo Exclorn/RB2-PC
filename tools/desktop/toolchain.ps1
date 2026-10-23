@@ -16,7 +16,7 @@
 #>
 
 $script:PortableTools = @(
-  @{ Name = "LLVM 20.1.8 (clang-cl, lld)"; Dir = "llvm"; Marker = "bin\clang-cl.exe"; Strip = 1
+  @{ Name = "LLVM 20.1.8 (clang-cl, lld)"; Dir = "llvm"; Marker = "bin\clang-cl.exe"; Strip = 1; Xz = $true
      Url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-x86_64-pc-windows-msvc.tar.xz"
      Sha256 = "f229769f11d6a6edc8ada599c0cda964b7dee6ab1a08c6cf9dd7f513e85b107f"; File = "llvm-20.1.8.tar.xz" },
   @{ Name = "CMake 3.31.8"; Dir = "cmake"; Marker = "bin\cmake.exe"; Strip = 1
@@ -29,6 +29,9 @@ $script:PortableTools = @(
      Url = "https://github.com/Jake-Shadle/xwin/releases/download/0.6.5/xwin-0.6.5-x86_64-pc-windows-msvc.tar.gz"
      Sha256 = "1e711b754207d41bbac1533b5c05e22fe6ee71f9f480346c7a2b0542ff1e4f2d"; File = "xwin-0.6.5.tar.gz" }
 )
+
+$script:SevenZipUrl = "https://github.com/ip7z/7zip/releases/download/24.09/7zr.exe"
+$script:SevenZipSha256 = "d2c0045523cf053a6b43f9315e9672fc2535f06aeadd4ffa53c729cd8b2b6dfe"
 
 function Get-PortableFile($url, $dest) {
   # curl.exe ships with Windows 10 1803+ and resumes broken downloads; fall back to Invoke-WebRequest.
@@ -47,7 +50,7 @@ function Use-PortableToolchain {
   $Root = [IO.Path]::GetFullPath($Root)
   $dl = Join-Path $Root "downloads"
   New-Item -ItemType Directory -Force $Root, $dl | Out-Null
-  # System tar (bsdtar, in Windows 10+): reads .zip, .tar.gz and .tar.xz. Not whatever 'tar' is on PATH:
+  # System tar (bsdtar, in Windows 10+): reads .zip and .tar.gz (.xz goes through 7zr first). Not whatever 'tar' is on PATH:
   # GNU tar from Git for Windows mistakes "C:\..." for a remote host.
   $tar = Join-Path $env:SystemRoot "System32\tar.exe"
   if (-not (Test-Path $tar)) { throw "Windows' built-in tar.exe is missing; this needs Windows 10 (1803) or newer." }
@@ -69,13 +72,37 @@ function Use-PortableToolchain {
     Write-Host "  Unpacking $($t.Name)..."
     if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
     New-Item -ItemType Directory -Force $dir | Out-Null
-    $tarArgs = @("-xf", $file, "-C", $dir)
+    $src = $file
+    if ($t.Xz) {
+      # Windows' own tar.exe often cannot run the xz filter ("unable to run program xz"), so .xz is
+      # first unwrapped with 7-Zip's tiny standalone 7zr.exe (official 7-Zip release on GitHub, pinned).
+      $sz = Join-Path $dl "7zr.exe"
+      if (-not (Test-Path $sz) -or ((Get-FileHash $sz -Algorithm SHA256).Hash -ne $script:SevenZipSha256.ToUpper())) {
+        if (Test-Path $sz) { Remove-Item $sz -Force }
+        Get-PortableFile $script:SevenZipUrl $sz
+        if ((Get-FileHash $sz -Algorithm SHA256).Hash -ne $script:SevenZipSha256.ToUpper()) {
+          Remove-Item $sz -Force
+          throw "7zr.exe: the download is corrupt or has been tampered with (SHA-256 mismatch). Run setup again."
+        }
+      }
+      $tmpTar = Join-Path $dl ([IO.Path]::GetFileNameWithoutExtension($file))
+      if (Test-Path $tmpTar) { Remove-Item $tmpTar -Force }
+      & $sz x $file "-o$dl" -y | Out-Null
+      if ($LASTEXITCODE -ne 0 -or -not (Test-Path $tmpTar)) {
+        if (Test-Path $tmpTar) { Remove-Item $tmpTar -Force }
+        throw "$($t.Name): could not decompress the .xz archive (is the disk full?)."
+      }
+      $src = $tmpTar
+    }
+    $tarArgs = @("-xf", $src, "-C", $dir)
     if ($t.Strip -gt 0) { $tarArgs += "--strip-components=$($t.Strip)" }
     & $tar @tarArgs
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path (Join-Path $dir $t.Marker))) {
       if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+      if ($src -ne $file -and (Test-Path $src)) { Remove-Item $src -Force }
       throw "$($t.Name): unpacking failed."
     }
+    if ($src -ne $file -and (Test-Path $src)) { Remove-Item $src -Force }
   }
 
   # Microsoft's C++ headers + libraries, via xwin (downloads ~1.5 GB from Microsoft, once).

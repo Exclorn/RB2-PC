@@ -36,6 +36,8 @@ jobs:
             try { $r = Invoke-WebRequest $t.Url -Method Head -UseBasicParsing; Write-Host "ok  $($t.Name)  $($r.StatusCode)" }
             catch { Write-Host "BAD $($t.Name): $($_.Exception.Message)"; $bad = 1 }
           }
+          try { $r = Invoke-WebRequest $script:SevenZipUrl -Method Head -UseBasicParsing; Write-Host "ok  7zr  $($r.StatusCode)" }
+          catch { Write-Host "BAD 7zr: $($_.Exception.Message)"; $bad = 1 }
           exit $bad
 
   no-game-content:
