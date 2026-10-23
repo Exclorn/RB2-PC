@@ -181,4 +181,4 @@ if (-not (Get-ChildItem $dist -Filter "rexgpu-xenos*.dll" -ErrorAction SilentlyC
 }
 Write-Host ""
 Write-Host "Built: $dist\rb2.exe" -ForegroundColor Green
-Write-Host "Run:   $dist\rb2.exe `"$GameDir`""
+Write-Host "Run:   $dist\rb2.exe --game_data_root=`"$GameDir`""

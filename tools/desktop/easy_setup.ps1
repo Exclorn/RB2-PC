@@ -213,13 +213,14 @@ if (-not $haveProgram) {
 # --- 3. Launcher + shortcut -----------------------------------------------------------------------
 Title 3 "Creating your shortcut"
 $play = Join-Path $Dist "Play Raging Blast 2.bat"
-Set-Content $play "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"%~dp0rb2.exe`" `"$GameDir`"`r`n" -Encoding ascii
+$GameDir = $GameDir.TrimEnd("\")   # a trailing backslash would swallow the closing quote
+Set-Content $play "@echo off`r`ncd /d `"%~dp0`"`r`nstart `"`" `"%~dp0rb2.exe`" --game_data_root=`"$GameDir`"`r`n" -Encoding ascii
 try {
   $desktop = [Environment]::GetFolderPath("Desktop")
   $ws = New-Object -ComObject WScript.Shell
   $lnk = $ws.CreateShortcut((Join-Path $desktop "Raging Blast 2.lnk"))
   $lnk.TargetPath = Join-Path $Dist "rb2.exe"
-  $lnk.Arguments = "`"$GameDir`""
+  $lnk.Arguments = "--game_data_root=`"$GameDir`""
   $lnk.WorkingDirectory = $Dist
   $lnk.Save()
   Say "  Added 'Raging Blast 2' to your desktop."
