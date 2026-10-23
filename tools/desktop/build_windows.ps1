@@ -39,7 +39,7 @@ param(
   [switch]$SkipCodegen,
   [ValidateSet("Auto", "VisualStudio", "Portable")][string]$Toolchain = "Auto",
   # Where the Vulkan-enabled ReXGlue SDK build is published (see .github/workflows/build-sdk.yml).
-  [string]$SdkRepo = "Exclorn/rb2-android",
+  [string]$SdkRepo = "Exclorn/RB2-PC",
   [string]$SdkReleaseTag = "sdk-v0.10.0-vulkan"
 )
 $ErrorActionPreference = "Stop"

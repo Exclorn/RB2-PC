@@ -17,7 +17,7 @@ try { Start-Transcript -Path $LogFile -Force | Out-Null } catch {}
 
 . (Join-Path $PSScriptRoot "toolchain.ps1")   # download helper
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-$ReleaseRepo = "Exclorn/rb2-android"       # GitHub redirects this if the repository is renamed
+$ReleaseRepo = "Exclorn/RB2-PC"       # GitHub redirects this if the repository is renamed
 $PrebuiltTag = "rb2-prebuilt"
 $GameDir = Join-Path $env:LOCALAPPDATA "RB2Recomp\game"
 $GamePathFile = Join-Path $Out "game-path.txt"
